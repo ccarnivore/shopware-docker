@@ -3,10 +3,14 @@ version: '2'
 services:
   app_server:
     build: dev-ops/docker/containers/php7
+    extra_hosts:
+      - "rest-exitb-erp.blissdev.de:172.22.0.1"
     volumes:
       - ~/.composer/cache:/var/www/composer-cache-dir:Z
       - .:/project:Z
       - .:/var/www/shopware:Z
+      - '/home/roman/workspace:/home/roman/workspace'
+      - '/tmp:/tmp'
     links:
       - app_mysql:mysql
     environment:
@@ -14,6 +18,8 @@ services:
       COMPOSER_CACHE_DIR: /var/www/composer-cache-dir
     ports:
       - "8083:80"
+    networks:
+      - dev_net
 
   app_mysql:
     build: dev-ops/docker/containers/mysql
@@ -23,6 +29,8 @@ services:
       MYSQL_ROOT_PASSWORD: root
       MYSQL_USER: app
       MYSQL_PASSWORD: app
+    networks:
+      - dev_net
 
   app_es:
     build: dev-ops/docker/containers/elastic-search
@@ -35,8 +43,19 @@ services:
     environment:
       TERM: xterm
       ES_JAVA_OPTS: "-Xmx256m -Xms256m"
+    networks:
+      - dev_net
 
   app_redis:
     build: dev-ops/docker/containers/redis
     volumes:
       - ./dev-ops/docker/_volumes/app-redisdata:/data:Z
+    networks:
+      - dev_net
+
+networks:
+  dev_net:
+    ipam:
+      driver: default
+      config:
+          - subnet: 172.22.0.0/16
